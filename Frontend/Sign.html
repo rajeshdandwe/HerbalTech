@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="css/style1.css">
+    <link rel="stylesheet" href="css/Sign.css">
+    <title>Login_Herbal</title>
+</head>
+
+<body>
+    <header class="header">
+
+        <div id="logo">
+            <img src="/Frond-End/images/HerbalTech (1).svg" alt="HerbalTech">
+        </div>
+        <nav class="navbar">
+            <a href="Home.html">home</a>
+            <a href="Home.html#about">about</a>
+            <a href="Home.html#menu">Herbal</a>
+            <a href="Sign.html">login</a>
+
+        </nav>
+    </header>
+    <div class="container" id="container">
+        <div class="form-container sign-up">
+            <form id="signupForm">
+                <h1>Create Account</h1>
+                <br>
+                <span>use your email for registeration</span>
+
+                <input id="username" type="text" placeholder="Name">
+                <input id="signupEmail" type="email" placeholder="Email">
+                <input id="signupPassword" type="password" placeholder="Password">
+                <button id="Submit">Sign Up</button>
+
+                <span>Continue With Google...</span>
+                <button id="googleSignUpBtn" type="button" class="icon"><i
+                        class="fa-brands fa-google-plus-g"></i></button>
+
+            </form>
+        </div>
+        <div class="form-container sign-in">
+            <form id="loginForm">
+                <h1>Sign In</h1>
+                <br>
+                <span> use your email password</span>
+
+                <input id="loginUsername" type="email" placeholder="Email">
+                <input id="loginPassword" type="password" placeholder="Password">
+                <a href="#" id="forgotPassword" type="button">Forget Your Password?</a>
+                <button id="submit">Sign In</button>
+
+                <span>Continue With Google...</span>
+                <button id="googleSignInBtn" type="button" class="icon"><i
+                        class="fa-brands fa-google-plus-g"></i></button>
+            </form>
+        </div>
+        <div class="toggle-container">
+            <div class="toggle">
+                <div class="toggle-panel toggle-left">
+                    <h1>Welcome to Herbal Tech !</h1>
+                    <p>Enter your personal details to use all of site features</p>
+                    <button class="hidden" id="login">Sign In</button>
+                </div>
+                <div class="toggle-panel toggle-right">
+                    <h1>Welcome to Herbal Tech!</h1>
+                    <p>Enter your personal details to use all of site features</p>
+                    <button class="hidden" id="register">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-analytics.js";
+        import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+        import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmm6uUOASBfRbdGVY3KihWXAeqZ4Q_Fp8",
+            authDomain: "herbal-68d38.firebaseapp.com",
+            databaseURL: "https://herbal-68d38-default-rtdb.firebaseio.com",
+            projectId: "herbal-68d38",
+            storageBucket: "herbal-68d38.appspot.com",
+            messagingSenderId: "839006752869",
+            appId: "1:839006752869:web:abaf6877e2630a7803f68c",
+            measurementId: "G-N5058L12YS"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth();
+        const db = getDatabase(app)
+
+        document.getElementById("signupForm").addEventListener("submit", function (event) {
+            event.preventDefault(); // Prevent default form submission behavior
+            var email = document.getElementById("signupEmail").value;
+            var password = document.getElementById("signupPassword").value;
+            var username = document.getElementById("username").value;
+
+            // Create new user with email and password
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    sendEmailVerification(auth.currentUser)
+                        .then(() => {
+                            set(ref(db, 'users/' + userCredential.user.uid), {
+                                email: email,
+                                username: username
+                            }).then(() => {
+                                console.log("User data stored successfully.");
+                                alert("Verification email sent. Please verify your email to complete registration.");
+                                // Redirect to index.html after successful registration
+                                window.location.href = "Dashboard.html";
+                            }).catch((error) => {
+                                console.error("Error storing user data:", error.message);
+                                alert("Error storing user data: " + error.message);
+                            });
+                        })
+                        .catch((error) => {
+                            console.error("Error sending verification email:", error.message);
+                            alert("Error sending verification email: " + error.message);
+                        });
+                })
+                .catch((error) => {
+                    console.error("Registration error:", error.message);
+                    alert("Registration error: " + error.message);
+                });
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // If a user is signed in, check if they are verified and signed in with Google
+                if (user.emailVerified && user.providerData[0].providerId === 'google.com') {
+                    // If verified and signed in with Google, save user data to the database
+                    const { displayName, email } = user;
+                    const userId = user.uid;
+                    set(ref(db, 'googleUsers/' + userId), {
+                        displayName: displayName,
+                        email: email
+                    }).then(() => {
+                        console.log("Google user data stored successfully.");
+                    }).catch((error) => {
+                        console.error("Error storing Google user data:", error.message);
+                    });
+                }
+            }
+        });
+        document.getElementById("googleSignUpBtn").addEventListener("click", function () {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    const user = result.user;
+                    console.log(user);
+                    alert("Ragistered!!");
+                    window.location.href = "Dashboard.html"; // Redirect to Dashboard.html after successful login
+                })
+                .catch((error) => {
+                    const errorMessage = error.message;
+                    console.log(errorMessage);
+                    alert(errorMessage);
+                });
+        });
+
+        document.getElementById("googleSignInBtn").addEventListener("click", function () {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    const user = result.user;
+                    console.log(user);
+                    alert("Login successfully!!");
+                    window.location.href = "Dashboard.html"; // Redirect to input.html after successful login
+                })
+                .catch((error) => {
+                    const errorMessage = error.message;
+                    console.log(errorMessage);
+                    alert(errorMessage);
+                });
+        });
+        // Login Form Submission
+        document.getElementById("loginForm").addEventListener("submit", function (event) {
+            event.preventDefault(); // Prevent default form submission behavior
+            var email = document.getElementById("loginUsername").value;
+            var password = document.getElementById("loginPassword").value;
+
+            // Sign in with email and passwordś
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    console.log(user);
+                    alert("Login successfully!!");
+                    window.location.href = "Dashboard.html"; // Redirect to Home.html after successful login
+                })
+                .catch((error) => {
+                    const errorMessage = error.message;
+                    console.log(errorMessage);
+                    alert(errorMessage);
+                });
+        });
+
+        // Forgot Password
+        document.getElementById("forgotPassword").addEventListener("click", function (event) {
+            event.preventDefault();
+            var email = document.getElementById("loginUsername").value;
+            if (email) {
+                // Send password reset email
+                sendPasswordResetEmail(auth, email)
+                    .then(() => {
+                        alert("Password reset email sent. Please check your inbox.");
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        alert("Error sending password reset email. Please try again later.");
+                    });
+            } else {
+                alert("Please enter your email address.");
+            }
+        });
+
+
+
+    </script>
+
+    <script src="Scipt/script.js"></script>
+</body>
+
+</html>
